@@ -1,0 +1,17 @@
+# Ignore build artifacts and IDE/editor files
+build/
+.pio/
+.pioenvs/
+*.bin
+*.elf
+*.hex
+*.log
+.vscode/
+.idea/
+.DS_Store
+.env
+# Node/npm
+node_modules/
+
+# macOS
+*.DS_Store

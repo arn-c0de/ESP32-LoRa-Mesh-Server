@@ -98,38 +98,46 @@ For questions or if you need an alternative pin layout, contact: arn-c0de@proton
 
 | Component | Quantity | Est. Price |
 |-----------|----------|------------|
-| ESP32 LoRa32 V2.1 (868 MHz) | 1 | $20-30 |
-| Tactile Button (if not included) | 1 | $0.50 |
-| USB Cable (Micro or Type-C) | 1 | $2-5 |
-| **Total (per device)** | | **$23-36** |
+| ESP32-WROOM (module) | 1 | €7-10 |
+| LoRa module (SX127x) | 1 | €15 |
+| Tactile Button (if not included) | 1 | €0.50 |
+| USB Cable (Micro or Type-C) | 1 | €2-5 |
+| **Total (per device)** | | **€25-31** |
 
 ### Complete Setup
 
 | Component | Quantity | Est. Price |
 |-----------|----------|------------|
-| ESP32 LoRa32 V2.1 (868 MHz) | 1 | $20-30 |
-| External LoRa Antenna (868 MHz, 3dBi) | 1 | $5-10 |
-| LiPo Battery (3.7V 2000mAh) | 1 | $8-12 |
-| Plastic Enclosure | 1 | $3-5 |
-| Tactile Button | 1 | $0.50 |
-| Dupont Wires (if needed) | 10 | $2 |
-| USB Cable | 1 | $2-5 |
-| **Total (per device)** | | **$41-65** |
+| ESP32-WROOM (module) | 1 | €7-10 |
+| LoRa module (SX127x) | 1 | €15 |
+| External LoRa Antenna (868 MHz, 3dBi) | 1 | €5-10 |
+| LiPo Battery (3.7V 2000mAh) | 1 | €8-12 |
+| Plastic Enclosure | 1 | €3-5 |
+| Tactile Button | 1 | €0.50 |
+| Dupont Wires (if needed) | 10 | €2 |
+| USB Cable | 1 | €2-5 |
+| **Total (per device)** | | **€43-60** |
 
 ### Premium Setup (Maximum Range)
 
 | Component | Quantity | Est. Price |
 |-----------|----------|------------|
-| ESP32 LoRa32 V2.1 (868 MHz) | 1 | $20-30 |
-| High-gain Antenna (868 MHz, 8-12 dBi) | 1 | $15-30 |
-| IP65 Weatherproof Enclosure | 1 | $10-15 |
-| 18650 Battery (3000mAh) | 2 | $12-20 |
-| 18650 Battery Holder (2S) | 1 | $3-5 |
-| Solar Panel (5V 5W) | 1 | $10-15 |
-| TP4056 Charging Module | 1 | $2-3 |
-| Antenna Extension Cable | 1 | $5-8 |
-| Mounting Hardware | - | $5-10 |
-| **Total (per device)** | | **$94-156** |
+| ESP32-WROOM (module) | 1 | €7-10 |
+| LoRa module (SX127x) | 1 | €15 |
+| High-gain Antenna (868 MHz, 8-12 dBi) | 1 | €15-30 |
+| IP65 Weatherproof Enclosure | 1 | €10-15 |
+| 18650 Battery (3000mAh) | 2 | €12-20 |
+| 18650 Battery Holder (2S) | 1 | €3-5 |
+| Solar Panel (5V 5W) | 1 | €10-15 |
+| TP4056 Charging Module | 1 | €2-3 |
+| Antenna Extension Cable | 1 | €5-8 |
+| Mounting Hardware | - | €5-10 |
+| **Total (per device)** | | **€84-131** |
+
+
+> **Preis-Hinweis:** Die oben angegebenen Schätzpreise stellen **Maximalwerte** dar. Auf Marktplätzen wie **AliExpress** sind viele Komponenten oft deutlich günstiger — ein einzelnes Gerät lässt sich häufig für **ca. €20–€30** zusammenstellen, und mit gebrauchten/alten Teilen sogar darunter. Typische Einzelpreise: **ESP32-WROOM ≈ €7–€10**, **LoRa-Modul ≈ €15**.
+
+> **Pricing note:** The estimated prices above are **maximums**. On marketplaces like **AliExpress** components are frequently much cheaper — a single device can often be assembled for **around €20–€30**, or less using used parts. Typical per-item prices: **ESP32-WROOM ≈ €7–€10**, **LoRa module ≈ €15**.
 
 ## Suppliers
 

@@ -47,15 +47,16 @@ jobs:
         arduino-cli lib install "Adafruit SSD1306"
         arduino-cli lib install "Adafruit GFX Library"
 
-    - name: Compile sketch to generate C++ artifacts
-      run: |
-        arduino-cli compile --fqbn esp32:esp32:esp32 . --output-dir build
-
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
         languages: ${{ matrix.language }}
         build-mode: 'manual'
+
+    - name: Compile sketch to generate C++ artifacts (traced by CodeQL)
+      run: |
+        echo "Compiling sketch (this build will be traced by CodeQL)..."
+        arduino-cli compile --fqbn esp32:esp32:esp32 . --output-dir build
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v3

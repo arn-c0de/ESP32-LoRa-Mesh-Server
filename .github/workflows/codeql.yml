@@ -1,0 +1,63 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [ "1.0.1", "1.1" ]
+  pull_request:
+    branches: [ "1.0.1", "1.1" ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly, Sunday at 00:00 UTC
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'cpp' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Install arduino-cli
+      run: |
+        curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh
+        sudo mv bin/arduino-cli /usr/local/bin/
+
+    - name: Initialize arduino-cli
+      run: |
+        arduino-cli config init
+        arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+        arduino-cli core update-index
+
+    - name: Install ESP32 core
+      run: |
+        arduino-cli core install esp32:esp32
+
+    - name: Install required libraries
+      run: |
+        arduino-cli lib install "RadioLib"
+        arduino-cli lib install "Adafruit SSD1306"
+        arduino-cli lib install "Adafruit GFX Library"
+
+    - name: Compile sketch to generate C++ artifacts
+      run: |
+        arduino-cli compile --fqbn esp32:esp32:esp32 . --output-dir build
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: ${{ matrix.language }}
+        build-mode: 'manual'
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:${{ matrix.language }}"

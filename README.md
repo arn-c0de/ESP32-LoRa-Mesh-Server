@@ -1,5 +1,5 @@
 [![GitHub Stars](https://img.shields.io/github/stars/arn-c0de/ESP32-LoRa-Mesh-Server?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server)
-[![License](https://img.shields.io/github/license/arn-c0de/ESP32-LoRa-Mesh-Server?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/arn-c0de/ESP32-LoRa-Mesh-Server?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server/LICENSE)
 [![Issues](https://img.shields.io/github/issues/arn-c0de/ESP32-LoRa-Mesh-Server?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server/issues)
 [![ESP32](https://img.shields.io/badge/ESP32-LoRa32-blue?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server)
 [![LoRa SX1276](https://img.shields.io/badge/LoRa-SX1276-green?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server)

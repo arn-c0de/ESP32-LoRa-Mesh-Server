@@ -48,6 +48,11 @@ This project implements a simple, reliable LoRa mesh network with the following 
 
 ## 3. Hardware
 
+
+![Prototype example](images/example-prototype-old-rework.jpg)
+*Prototype idea — pictured build is an example. For the antenna, you can buy a standard helical (spiral) antenna, or reuse an old coax cable by carefully stripping and insulating the exposed end as shown in the photo. This is just an idea and not an instruction.*
+
+
 Refer to [HARDWARE.md](HARDWARE.md) for detailed wiring, pin assignments, BOM, suppliers, and tools. Key pins:
 
 - LoRa NSS: GPIO 5

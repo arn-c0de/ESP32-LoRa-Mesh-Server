@@ -50,7 +50,7 @@ This project implements a simple, reliable LoRa mesh network with the following 
 
 ## 3. Hardware
 
-Refer to `HARDWARE.md` for wiring and pin assignments. Key pins:
+Refer to [HARDWARE.md](HARDWARE.md) for detailed wiring, pin assignments, BOM, suppliers, and tools. Key pins:
 
 - LoRa NSS: GPIO 5
 - LoRa RST: GPIO 14

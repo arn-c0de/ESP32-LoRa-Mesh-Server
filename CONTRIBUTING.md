@@ -7,7 +7,7 @@ We welcome contributions that improve this project. Please read these guidelines
 1. Fork the repository on GitHub
 2. Clone your fork locally:
    ```bash
-   git clone https://github.com/<your-username>/ESP32-LoRa-Mesh-Server.git
+   git clone https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server.git
    cd ESP32-LoRa-Mesh-Server
    ```
 3. Create a feature branch:

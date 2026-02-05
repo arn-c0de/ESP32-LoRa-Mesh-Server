@@ -191,9 +191,11 @@ See top-level layout; important files include:
 ## 13. Support & License
 
 - **License**: MIT (see [LICENSE](LICENSE))
-- **Repo**: https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server
-- **Security contact**: arn-c0de@protonmail.com
-- **Issues & PRs**: use GitHub Issues and Pull Requests
+- **Repository**: https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server
+- **Reporting Issues**: [GitHub Issues](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server/issues)
+- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Code of Conduct**: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- **Security**: Report vulnerabilities to arn-c0de@protonmail.com (see [SECURITY.md](SECURITY.md))
 
 This project is provided as-is for educational and experimental purposes.
 

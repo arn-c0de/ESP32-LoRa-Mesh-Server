@@ -1,66 +1,70 @@
-# Hardware — Pin Layout (FINAL)
+# Hardware — Pin Layout
 
-> Fokus: Nur Hardware-Layout und Pin‑Belegung. Firmware/Software wird separat neu geschrieben.
+> Scope: Hardware layout and pin assignment. Firmware is documented separately.
 
-## Kurzüberblick
-- Zielplattform: **ESP32 LoRa32 (z. B. TTGO LoRa32 V2.1)**
-- Display: **SSD1306 OLED** (I2C)
-- Button: **GPIO 33** (Input, use internal pull‑up)
-- Antenne: **U.FL** (oder integrierte Federantenne) — immer angeschlossen betreiben
-- Default-Frequenz: **868 MHz** (EU); anpassbar in Firmware
+## Overview
+
+- **Target Platform**: ESP32 LoRa32 (e.g., TTGO LoRa32 V2.1)
+- **Display**: SSD1306 OLED (I2C)
+- **Button**: GPIO 33 (Input, use internal pull-up)
+- **Antenna**: U.FL (or integrated spring antenna) — always connect before TX
+- **Default Frequency**: 868 MHz (EU); configurable in firmware
 
 ---
 
-## Pin‑Belegung (definitiv)
+## Pin Assignment
 
-| Funktion        | GPIO  | Hinweise |
+| Function        | GPIO  | Notes |
 |-----------------|:-----:|:---------|
 | LoRa NSS / CS   | 5     | SPI Chip Select
-| LoRa RST        | 14    | Reset für LoRa‑Modul
+| LoRa RST        | 14    | LoRa module reset
 | LoRa DIO0       | 26    | RX/TX IRQ (RX done)
 | LoRa SCK        | 18    | SPI Clock
 | LoRa MISO       | 19    | SPI MISO
 | LoRa MOSI       | 23    | SPI MOSI
 | OLED SDA (I2C)  | 21    | SSD1306 SDA (I2C)
 | OLED SCL (I2C)  | 22    | SSD1306 SCL (I2C)
-| OLED_RESET      | -1    | Reset shared / not exposed on all Boards — prüfen Hardware
-| Button (PAIR)   | 33    | Input; **use INPUT_PULLUP** (firmware‑verhalten separat festlegen)
+| OLED_RESET      | -1    | Reset shared / not exposed on all boards — check hardware
+| Button (PAIR)   | 33    | Input; use INPUT_PULLUP
 | LED (onboard)   | 2     | Status LED (optional)
-| VBAT_MON (ADC)  | 35    | ADC pin für Batterieüberwachung (optional)
-| USB Serial TX/RX| 1, 3  | Programmierung / Serial
+| VBAT_MON (ADC)  | 35    | ADC pin for battery monitoring (optional)
+| USB Serial TX/RX| 1, 3  | Programming / Serial
 
 ---
 
-## Empfehlungen & Hinweise
-- Button: **Nur Hardware** dokumentiert (GPIO33, Pull‑up). Firmware‑Verhalten (kurz/long press) wird in der neuen Software definiert.
-  - Empfohlene Firmware‑Verhalten (optional): Kurzdruck → Pairing / ECDH; Langdruck → Bluetooth toggle / Reset (implementieren falls nötig).
-- OLED I2C Adresse: **0x3C** (Standard) — falls Display nicht erkennt, prüfen 0x3D.
-- Antenne: **Nie** ohne Antenne TX betreiben (schützt PA).
-- Frequenz/Gerät: Stelle sicher, dass die Board‑Einstellung und Antenne zur Region passen (868 MHz EU / 915 MHz US).
+## Recommendations & Notes
+
+- **Button**: Hardware documented (GPIO33, Pull-up). Button behavior is defined in firmware.
+- **OLED I2C Address**: Default is **0x3C** — if display does not respond, check 0x3D.
+- **Antenna**: Never transmit without an antenna connected (risk of PA damage).
+- **Frequency/Board**: Ensure board settings and antenna match your region (868 MHz EU / 915 MHz US).
 
 ---
 
-## Boot‑kritische Pins & Einschränkungen
-- **Vorsichtig verwenden**: GPIO 0, 2, 12, 15 (Boot‑Konfigurationen beeinflusst)
-- **Input‑only**: GPIO 34, 35, 36, 39 (keine Pull‑ups/-downs, kein PWM)
-- **NICHT verwenden**: GPIO 6–11 (Flash/SD pins) — Risiko für Datenverlust
+## Boot-Critical Pins & Limitations
+
+- **Use with care**: GPIO 0, 2, 12, 15 (affect boot configuration)
+- **Input-only**: GPIO 34, 35, 36, 39 (no pull-ups/downs, no PWM)
+- **Do NOT use**: GPIO 6–11 (Flash/SD pins) — risk of data loss
 
 ---
 
-## Kurze Tests (Hardware‑Checks)
-1. Power on → LED / USB‑Serielle Kommunikation prüfen (115200 Baud).
-2. I2C: Scan (I2C‑Scanner) → OLED bei 0x3C sichtbar.
-3. LoRa: Firmware‑Testskript → "LoRa init success" und Frequency check.
-4. Button: Hardware‑Bouncedebounce prüfen; GPIO‑state bei gedrückt = LOW (INPUT_PULLUP).
+## Quick Hardware Tests
+
+1. Power on → verify LED / USB serial communication (115200 baud).
+2. I2C: Run I2C scanner → OLED visible at 0x3C.
+3. LoRa: Run firmware test → expect "LoRa init success" and frequency check.
+4. Button: Check for debounce; GPIO state when pressed = LOW (INPUT_PULLUP).
 
 ---
 
-## Änderungsvermerk
-- Diese Datei ist die finale Hardware‑Pin‑Spezifikation. Alle Firmware‑Änderungen und Button‑Logik werden in separaten Software‑Issues/Commits dokumentiert.
+## Change Log
+
+- This file is the final hardware pin specification. All firmware changes and button logic are documented in separate commits.
 
 ---
 
-Bei Fragen oder wenn du eine alternative Pin‑Belegung brauchst, sag Bescheid.
+For questions or if you need an alternative pin layout, contact: arn-c0de@protonmail.com
 - ✅ Charge at correct rate (1C maximum)
 - ✅ Store at 3.7-3.8V for long term
 - ❌ Don't over-discharge below 3.0V

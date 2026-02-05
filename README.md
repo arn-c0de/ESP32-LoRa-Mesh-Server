@@ -1,6 +1,8 @@
 [![GitHub Stars](https://img.shields.io/github/stars/arn-c0de/ESP32-LoRa-Mesh-Server?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server)
 [![License](https://img.shields.io/github/license/arn-c0de/ESP32-LoRa-Mesh-Server?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server/blob/main/LICENSE)
 [![Issues](https://img.shields.io/github/issues/arn-c0de/ESP32-LoRa-Mesh-Server?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server/issues)
+[![ESP32](https://img.shields.io/badge/ESP32-LoRa32-blue?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server)
+[![LoRa SX1276](https://img.shields.io/badge/LoRa-SX1276-green?style=flat)](https://github.com/arn-c0de/ESP32-LoRa-Mesh-Server)
 
 # ESP32 LoRa Mesh Server
 
@@ -13,19 +15,19 @@ Security contact: arn-c0de@protonmail.com
 
 ## Table of contents
 
-1. About
-2. Features
-3. Hardware
-4. Quick start
-5. Commands (full list)
-6. Encryption (AES-256-GCM)
-7. Mesh protocol
-8. Display
-9. Examples
-10. Troubleshooting
-11. Legal & Safety
-12. File structure
-13. Support & License
+1. [About](#1-about)
+2. [Features](#2-features)
+3. [Hardware](#3-hardware)
+4. [Quick start](#4-quick-start)
+5. [Commands (full list)](#5-commands-full-list)
+6. [Encryption (AES-256-GCM)](#6-encryption-aes-256-gcm)
+7. [Mesh protocol](#7-mesh-protocol-details)
+8. [Display](#8-display)
+9. [Examples](#9-examples)
+10. [Troubleshooting](#10-troubleshooting)
+11. [Legal & Safety](#11-legal--safety)
+12. [File structure](#12-file-structure)
+13. [Support & License](#13-support--license)
 
 ---
 
@@ -192,6 +194,3 @@ See top-level layout; important files include:
 - Security contact: arn-c0de@protonmail.com
 - Issues & PRs: use GitHub Issues and Pull Requests
 
----
-
-If you want, I can also add a short example section showing how to decrypt an `ESEND` payload in a client script or expand the security/contact section with a simple disclosure policy.

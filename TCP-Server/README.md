@@ -40,6 +40,9 @@ The server starts:
 - **TCP listener** on port 5001 (ESP32 nodes connect here)
 - **HTTP API** on port 8000 (REST + WebSocket)
 
+Full setup guide
+- See `../QUICKSTART.md` for ESP32 + HomeServer installation and configuration.
+
 ## Configuration
 
 Configuration is loaded from `config.yaml` with environment variable overrides. See `config.yaml` for all options.

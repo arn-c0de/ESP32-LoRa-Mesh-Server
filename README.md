@@ -73,6 +73,9 @@ Refer to [HARDWARE.md](HARDWARE.md) for detailed wiring, pin assignments, BOM, s
 HomeServer (TCP collector)
 - The optional backend lives in `TCP-Server/`. See [TCP-Server/README.md](TCP-Server/README.md) for setup and API docs.
 
+Full setup guide
+- See [QUICKSTART.md](QUICKSTART.md) for ESP32 + HomeServer installation and configuration details.
+
 ## 5. Commands (full list)
 
 Commands accept a leading `/` and separators `:`, `=` or a space. They are case-insensitive.

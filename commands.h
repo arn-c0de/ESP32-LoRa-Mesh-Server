@@ -13,6 +13,7 @@
 
 #include <Arduino.h>
 #include <RadioLib.h>
+#include <WiFi.h>
 #include "mesh_network.h"
 #include "crypt.h"
 
@@ -542,7 +543,7 @@ void processSerialCommand(String cmd) {
     else if (command == "SERVERPORT") {
         if (argument.length() > 0) {
             uint16_t port = argument.toInt();
-            if (port > 0 && port <= 65535) {
+            if (port != 0) {
                 saveServerPort(port);
                 Serial.print("[OK] Server port set to: ");
                 Serial.println(serverPort);

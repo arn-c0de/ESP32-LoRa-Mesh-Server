@@ -17,7 +17,7 @@ NC='\033[0m' # No Color
 # ================================================================
 # Parse .env file for compile-time defines
 # ================================================================
-BUILD_DEFINES=""
+BUILD_DEFINES=()
 if [ -f ".env" ]; then
     echo -e "${BLUE}[ENV] Loading .env file...${NC}"
     trim() {
@@ -37,13 +37,19 @@ if [ -f ".env" ]; then
         # String values need escaped quotes for C compiler
         case "$key" in
             WIFI_SSID|WIFI_PASS|SERVER_IP|DEVICE_NAME|ENCRYPTION_PASSPHRASE|TCP_SHARED_SECRET)
-                BUILD_DEFINES="$BUILD_DEFINES -D${key}=\"\\\"${value}\\\"\""
+                # Escape for C string literals and avoid spaces in compiler args
+                escaped_value="${value//\\/\\\\}"
+                escaped_value="${escaped_value//\"/\\\"}"
+                # Use octal escapes to avoid C hex-escape bleed (e.g. \x20B)
+                escaped_value="${escaped_value// /\\040}"
+                escaped_value="${escaped_value//	/\\011}"
+                BUILD_DEFINES+=("-D${key}=\"${escaped_value}\"")
                 ;;
             SERVER_PORT|NODE_ID|LORA_POWER|LORA_SF|LORA_CR|LORA_HOPS|TCP_ENABLED)
-                BUILD_DEFINES="$BUILD_DEFINES -D${key}=${value}"
+                BUILD_DEFINES+=("-D${key}=${value}")
                 ;;
             LORA_FREQ|LORA_BW)
-                BUILD_DEFINES="$BUILD_DEFINES -D${key}=${value}"
+                BUILD_DEFINES+=("-D${key}=${value}")
                 ;;
         esac
         case "$key" in
@@ -233,15 +239,51 @@ echo -e "  Board: $FQBN"
 echo -e "  Sketch: $SKETCH_NAME"
 echo ""
 
+# Some libraries still key off the legacy ESP32 macro.
+if [[ "$FQBN" == esp32:* ]]; then
+    BUILD_DEFINES+=("-DESP32")
+fi
+
 # Compile once and put build artifacts into ./build
 echo -e "${BLUE}Compiling once into ./build (reused for uploads)...${NC}"
-COMPILE_CMD="arduino-cli compile --fqbn \"$FQBN\" \"$SKETCH_DIR\" --output-dir build --warnings all"
-if [ -n "$BUILD_DEFINES" ]; then
-    COMPILE_CMD="arduino-cli compile --fqbn \"$FQBN\" \"$SKETCH_DIR\" --output-dir build --warnings all --build-property \"build.extra_flags=$BUILD_DEFINES\""
-    echo -e "${BLUE}Build defines: ${NC}$BUILD_DEFINES"
+COMPILE_ARGS=(arduino-cli compile --fqbn "$FQBN" "$SKETCH_DIR" --output-dir build --warnings all)
+if [ ${#BUILD_DEFINES[@]} -gt 0 ]; then
+    BUILD_DEFINES_STR="${BUILD_DEFINES[*]}"
+    COMPILE_ARGS+=(--build-property "build.extra_flags=$BUILD_DEFINES_STR")
+    redact_define() {
+        case "$1" in
+            -DWIFI_SSID=*)
+                # Show only a short prefix/suffix of SSID
+                local v="${1#-DWIFI_SSID=}"
+                v="${v#\"}"
+                v="${v%\"}"
+                local len=${#v}
+                local head=4
+                local tail=3
+                if [ $len -le $((head+tail)) ]; then
+                    echo "-DWIFI_SSID=\"${v}\""
+                else
+                    local prefix="${v:0:head}"
+                    local suffix="${v:len-tail:tail}"
+                    echo "-DWIFI_SSID=\"${prefix}…${suffix}\""
+                fi
+                ;;
+            -DWIFI_PASS=*|-DENCRYPTION_PASSPHRASE=*|-DTCP_SHARED_SECRET=*)
+                echo "${1%%=*}=********"
+                ;;
+            *)
+                echo "$1"
+                ;;
+        esac
+    }
+    DISPLAY_DEFINES=()
+    for def in "${BUILD_DEFINES[@]}"; do
+        DISPLAY_DEFINES+=("$(redact_define "$def")")
+    done
+    echo -e "${BLUE}Build defines: ${NC}${DISPLAY_DEFINES[*]}"
     echo ""
 fi
-COMPILE_OUTPUT=$(eval $COMPILE_CMD 2>&1) || {
+COMPILE_OUTPUT=$("${COMPILE_ARGS[@]}" 2>&1) || {
     echo ""
     echo -e "${RED}[ERROR] Compilation failed!${NC}"
     echo ""
@@ -320,7 +362,7 @@ else
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             echo -e "${BLUE}Opening serial monitor... (Ctrl+C to exit)${NC}"
             sleep 2
-            arduino-cli monitor -p "$PORT" -c baudrate="$BAUD"
+            arduino-cli monitorv2 -p "$PORT" -c baudrate="$BAUD"
         fi
     else
         echo ""

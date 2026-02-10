@@ -78,6 +78,14 @@ class GUIConfig:
     path: str = "gui"
     mount_path: str = "/"
 
+@dataclass
+class CORSConfig:
+    enabled: bool = True
+    allow_origins: list[str] = field(default_factory=lambda: ["*"])
+    allow_methods: list[str] = field(default_factory=lambda: ["*"])
+    allow_headers: list[str] = field(default_factory=lambda: ["*"])
+    allow_credentials: bool = False
+
 
 @dataclass
 class AppConfig:
@@ -91,6 +99,7 @@ class AppConfig:
     rate_limit: RateLimitConfig = field(default_factory=RateLimitConfig)
     startup_checks: StartupChecksConfig = field(default_factory=StartupChecksConfig)
     gui: GUIConfig = field(default_factory=GUIConfig)
+    cors: CORSConfig = field(default_factory=CORSConfig)
 
 
 def load_config(config_path: str = None) -> AppConfig:
@@ -125,6 +134,8 @@ def load_config(config_path: str = None) -> AppConfig:
             config.startup_checks = StartupChecksConfig(**data["startup_checks"])
         if "gui" in data:
             config.gui = GUIConfig(**data["gui"])
+        if "cors" in data:
+            config.cors = CORSConfig(**data["cors"])
 
     # Environment variable overrides
     if v := os.getenv("TCP_HOST"):
@@ -177,5 +188,15 @@ def load_config(config_path: str = None) -> AppConfig:
         config.gui.path = v
     if v := os.getenv("GUI_MOUNT_PATH"):
         config.gui.mount_path = v
+    if v := os.getenv("CORS_ENABLED"):
+        config.cors.enabled = v.lower() in ("1", "true", "yes")
+    if v := os.getenv("CORS_ALLOW_ORIGINS"):
+        config.cors.allow_origins = [s.strip() for s in v.split(",") if s.strip()]
+    if v := os.getenv("CORS_ALLOW_METHODS"):
+        config.cors.allow_methods = [s.strip() for s in v.split(",") if s.strip()]
+    if v := os.getenv("CORS_ALLOW_HEADERS"):
+        config.cors.allow_headers = [s.strip() for s in v.split(",") if s.strip()]
+    if v := os.getenv("CORS_ALLOW_CREDENTIALS"):
+        config.cors.allow_credentials = v.lower() in ("1", "true", "yes")
 
     return config

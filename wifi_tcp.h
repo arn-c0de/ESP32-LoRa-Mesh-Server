@@ -86,6 +86,14 @@ extern String deviceName;
 bool wifiConnected = false;
 bool tcpConnected = false;
 bool tcpEnabled = false;
+bool wifiAutoReconnect = true;
+
+void onWiFiEvent(WiFiEvent_t event, WiFiEventInfo_t info) {
+    if (event == SYSTEM_EVENT_STA_DISCONNECTED) {
+        Serial.print("[WiFi] Disconnected, reason: ");
+        Serial.println(info.wifi_sta_disconnected.reason);
+    }
+}
 
 String wifiSSID = "";
 String wifiPassword = "";
@@ -268,16 +276,36 @@ void connectWiFi() {
         return;
     }
 
+    Serial.print("[WiFi] SSID len: ");
+    Serial.print(wifiSSID.length());
+    Serial.print(", PASS len: ");
+    Serial.println(wifiPassword.length());
+
     Serial.print("[WiFi] Connecting to ");
     Serial.print(wifiSSID);
     Serial.println("...");
 
     WiFi.mode(WIFI_STA);
+    WiFi.setSleep(false);
     WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
     lastWiFiAttempt = millis();
 }
 
+const char *wifiStatusToString(wl_status_t s) {
+    switch (s) {
+        case WL_IDLE_STATUS: return "IDLE";
+        case WL_NO_SSID_AVAIL: return "NO_SSID";
+        case WL_SCAN_COMPLETED: return "SCAN_DONE";
+        case WL_CONNECTED: return "CONNECTED";
+        case WL_CONNECT_FAILED: return "CONNECT_FAILED";
+        case WL_CONNECTION_LOST: return "CONNECTION_LOST";
+        case WL_DISCONNECTED: return "DISCONNECTED";
+        default: return "UNKNOWN";
+    }
+}
+
 void handleWiFiReconnect() {
+    if (!wifiAutoReconnect) return;
     if (WiFi.status() == WL_CONNECTED) {
         if (!wifiConnected) {
             wifiConnected = true;
@@ -297,6 +325,26 @@ void handleWiFiReconnect() {
 
     // Exponential backoff reconnect
     if (millis() - lastWiFiAttempt >= wifiBackoff) {
+        // Quick scan to verify SSID visibility (not on every loop)
+        if (wifiBackoff == 5000) {
+            Serial.println("[WiFi] Scanning...");
+            int n = WiFi.scanNetworks();
+            if (n <= 0) {
+                Serial.println("[WiFi] Scan: no networks found");
+            } else {
+                bool found = false;
+                for (int i = 0; i < n; i++) {
+                    String s = WiFi.SSID(i);
+                    if (s == wifiSSID) found = true;
+                }
+                Serial.print("[WiFi] Scan: SSID ");
+                Serial.println(found ? "FOUND" : "NOT FOUND");
+            }
+            WiFi.scanDelete();
+        }
+
+        Serial.print("[WiFi] Status: ");
+        Serial.println(wifiStatusToString(WiFi.status()));
         connectWiFi();
         wifiBackoff = min(wifiBackoff * 2, WIFI_BACKOFF_MAX);
     }
@@ -436,6 +484,7 @@ void handleTCP() {
 // =============================
 void setupWiFi() {
     loadWiFiSettings();
+    WiFi.onEvent(onWiFiEvent);
 
     Serial.println("[WiFi] Configuration:");
     Serial.print("  SSID:    ");
@@ -450,6 +499,113 @@ void setupWiFi() {
     if (tcpEnabled && wifiSSID.length() > 0) {
         connectWiFi();
     }
+}
+
+void setWiFiAutoReconnect(bool enabled) {
+    wifiAutoReconnect = enabled;
+    if (!enabled) {
+        WiFi.disconnect(true);
+        wifiConnected = false;
+        tcpConnected = false;
+    } else if (tcpEnabled && wifiSSID.length() > 0) {
+        connectWiFi();
+    }
+}
+
+// =============================
+// WIFI DIAGNOSTICS (manual)
+// =============================
+void wifiTest() {
+    Serial.println("========================================");
+    Serial.println("  WIFI TEST");
+    Serial.println("========================================");
+    Serial.print("SSID:     ");
+    Serial.println(wifiSSID.length() > 0 ? wifiSSID : "(not set)");
+    Serial.print("PASS len: ");
+    Serial.println(wifiPassword.length());
+
+    WiFi.mode(WIFI_STA);
+    WiFi.setSleep(false);
+    WiFi.disconnect(true);
+    delay(200);
+
+    Serial.println("[WiFi] Scanning...");
+    int n = WiFi.scanNetworks();
+    int targetChannel = 0;
+    uint8_t targetBssid[6] = {0};
+    bool haveTarget = false;
+    if (n <= 0) {
+        Serial.println("[WiFi] Scan: no networks found");
+    } else {
+        bool found = false;
+        int shown = 0;
+        Serial.println("[WiFi] Scan results (top 10):");
+        for (int i = 0; i < n && shown < 10; i++) {
+            String s = WiFi.SSID(i);
+            int rssi = WiFi.RSSI(i);
+            wifi_auth_mode_t auth = WiFi.encryptionType(i);
+            int ch = WiFi.channel(i);
+            Serial.print("  - ");
+            Serial.print(s);
+            Serial.print("  RSSI=");
+            Serial.print(rssi);
+            Serial.print("  CH=");
+            Serial.print(ch);
+            Serial.print("  AUTH=");
+            Serial.println((int)auth);
+            shown++;
+            if (s == wifiSSID) {
+                found = true;
+                if (!haveTarget) {
+                    const uint8_t *b = WiFi.BSSID(i);
+                    if (b) {
+                        memcpy(targetBssid, b, 6);
+                        targetChannel = ch;
+                        haveTarget = true;
+                    }
+                }
+            }
+        }
+        Serial.print("[WiFi] Scan: SSID ");
+        Serial.println(found ? "FOUND" : "NOT FOUND");
+    }
+    WiFi.scanDelete();
+
+    if (wifiSSID.length() == 0) {
+        Serial.println("[WiFi] No SSID configured");
+        Serial.println("========================================");
+        return;
+    }
+
+    Serial.println("[WiFi] Connecting (10s timeout)...");
+    if (haveTarget) {
+        Serial.print("[WiFi] Using BSSID ");
+        char bssidStr[18];
+        snprintf(bssidStr, sizeof(bssidStr), "%02X:%02X:%02X:%02X:%02X:%02X",
+                 targetBssid[0], targetBssid[1], targetBssid[2],
+                 targetBssid[3], targetBssid[4], targetBssid[5]);
+        Serial.print(bssidStr);
+        Serial.print(" on CH ");
+        Serial.println(targetChannel);
+        WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str(), targetChannel, targetBssid, true);
+    } else {
+        WiFi.begin(wifiSSID.c_str(), wifiPassword.c_str());
+    }
+    uint32_t start = millis();
+    while (millis() - start < 10000) {
+        wl_status_t s = WiFi.status();
+        if (s == WL_CONNECTED) {
+            Serial.print("[WiFi] CONNECTED, IP: ");
+            Serial.println(WiFi.localIP());
+            Serial.println("========================================");
+            return;
+        }
+        delay(500);
+    }
+
+    Serial.print("[WiFi] Failed, status: ");
+    Serial.println(wifiStatusToString(WiFi.status()));
+    Serial.println("========================================");
 }
 
 // =============================

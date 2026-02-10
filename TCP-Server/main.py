@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 import structlog
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
@@ -123,6 +124,16 @@ app = FastAPI(
 # Auth middleware
 if config.auth.enabled:
     app.add_middleware(APIKeyMiddleware, api_key=config.auth.api_key)
+
+# CORS middleware
+if config.cors.enabled:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=config.cors.allow_origins,
+        allow_methods=config.cors.allow_methods,
+        allow_headers=config.cors.allow_headers,
+        allow_credentials=config.cors.allow_credentials,
+    )
 
 # Rate limiting
 if config.rate_limit.enabled:

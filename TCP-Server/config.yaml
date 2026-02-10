@@ -49,3 +49,10 @@ gui:
   enabled: true
   path: "gui"
   mount_path: "/"
+
+cors:
+  enabled: true
+  allow_origins: ["*"]
+  allow_methods: ["*"]
+  allow_headers: ["*"]
+  allow_credentials: false

@@ -57,6 +57,8 @@ extern void saveTCPEnabled(bool enabled);
 extern void printTCPStatus();
 extern void connectWiFi();
 extern void connectTCP();
+extern void wifiTest();
+extern void setWiFiAutoReconnect(bool enabled);
 
 // =============================
 // HELP TEXT
@@ -104,6 +106,9 @@ void printHelp() {
     Serial.println("/TCPSTATUS        - Show WiFi/TCP connection status");
     Serial.println("/RECONNECT        - Force WiFi/TCP reconnect");
     Serial.println("/TCPTOKEN:token   - Set TCP shared secret (case-sensitive)");
+    Serial.println("/WIFITEST         - Run WiFi diagnostics (scan + connect test)");
+    Serial.println("/WIFITESTSTOP     - Stop WiFi auto-reconnect (quiet)");
+    Serial.println("/WIFITESTSTART    - Resume WiFi auto-reconnect");
     Serial.println();
     Serial.println("--- Other ---");
     Serial.println("/RESET            - Reset counters and display");
@@ -574,6 +579,18 @@ void processSerialCommand(String cmd) {
     // TCPSTATUS - Show WiFi/TCP status
     else if (command == "TCPSTATUS") {
         printTCPStatus();
+    }
+    // WIFITEST - Run WiFi diagnostics
+    else if (command == "WIFITEST" || command == "WIFI-TEST") {
+        wifiTest();
+    }
+    else if (command == "WIFITESTSTOP" || command == "WIFI-TEST-STOP") {
+        setWiFiAutoReconnect(false);
+        Serial.println("[OK] WiFi auto-reconnect stopped");
+    }
+    else if (command == "WIFITESTSTART" || command == "WIFI-TEST-START") {
+        setWiFiAutoReconnect(true);
+        Serial.println("[OK] WiFi auto-reconnect resumed");
     }
     // TCPTOKEN - Set TCP shared secret (case-sensitive)
     else if (command == "TCPTOKEN") {

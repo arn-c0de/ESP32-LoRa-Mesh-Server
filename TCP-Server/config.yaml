@@ -1,0 +1,51 @@
+# HomeServer Configuration
+# All values can be overridden via environment variables.
+
+tcp:
+  host: "0.0.0.0"
+  port: 5001
+  shared_secret: ""  # Optional pre-shared token for HELLO auth
+  max_line_length: 2048
+  max_data_length: 512
+  max_device_name_length: 64
+  max_connections: 100
+
+http:
+  host: "0.0.0.0"
+  port: 8000
+
+database:
+  url: "sqlite+aiosqlite:///homeserver.db"
+
+auth:
+  enabled: false
+  api_key: ""  # Set a strong key when enabling auth
+  require_for_decrypt: true
+  require_for_health: false
+  max_ws_connections: 100
+
+encryption:
+  passphrase: ""  # Same passphrase as ESP32 nodes for server-side decryption
+  store_decrypted: false
+
+retention:
+  enabled: true
+  max_age_days: 30
+  check_interval_hours: 1
+
+logging:
+  level: "INFO"
+  format: "console"  # "console" or "json"
+
+rate_limit:
+  enabled: true
+  requests_per_minute: 60
+
+startup_checks:
+  enabled: true
+  loopback_enabled: true
+
+gui:
+  enabled: true
+  path: "gui"
+  mount_path: "/"

@@ -15,3 +15,28 @@ node_modules/
 
 # macOS
 *.DS_Store
+build/
+
+# TCP-Server (Python HomeServer)
+TCP-Server/homeserver.db
+TCP-Server/*.db
+TCP-Server/*.sqlite
+TCP-Server/*.sqlite3
+TCP-Server/venv/
+TCP-Server/__pycache__/
+TCP-Server/*.pyc
+TCP-Server/.env
+TCP-Server/.env.*
+
+TCP-Server/app/__pycache__/
+TCP-Server/__pycache__/
+
+# Python caches (root)
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Logs and runtime files
+*.log
+*.pid
+*.sock

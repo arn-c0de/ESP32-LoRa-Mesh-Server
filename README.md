@@ -70,6 +70,9 @@ Refer to [HARDWARE.md](HARDWARE.md) for detailed wiring, pin assignments, BOM, s
 3. Open serial monitor with `./serial_monitor.sh` or `arduino-cli monitor -p <port> -c baudrate=115200`.
 4. Type `/HELP` on the serial console for the full command list.
 
+HomeServer (TCP collector)
+- The optional backend lives in `TCP-Server/`. See [TCP-Server/README.md](TCP-Server/README.md) for setup and API docs.
+
 ## 5. Commands (full list)
 
 Commands accept a leading `/` and separators `:`, `=` or a space. They are case-insensitive.
@@ -94,6 +97,17 @@ Mesh configuration
 Messaging
 - `/TX:message` or `/SEND:message` — Broadcast message (ToID=0)
 - `/TXTO:id,msg` or `/SENDTO:id,msg` — Send to specific node
+
+WiFi/TCP HomeServer
+- `/WIFISSID:name` — Set WiFi SSID (case-sensitive)
+- `/WIFIPASS:pass` — Set WiFi password (case-sensitive)
+- `/SERVERIP:x.x.x.x` — Set HomeServer IP
+- `/SERVERPORT:5001` — Set HomeServer TCP port
+- `/TCPENABLE` — Enable WiFi/TCP connection
+- `/TCPDISABLE` — Disable WiFi/TCP connection
+- `/TCPSTATUS` — Show WiFi/TCP connection status
+- `/RECONNECT` — Force WiFi/TCP reconnect
+- `/TCPTOKEN:token` — Set TCP shared secret (case-sensitive)
 
 Device name
 - `/NAME:DeviceName` — Set device name (prepended to outgoing messages)
@@ -183,6 +197,12 @@ Always check local regulations before transmitting.
 
 NEVER transmit without an antenna connected — this may damage the power amplifier.
 
+## Security Notes (HomeServer)
+
+- The TCP collector in `TCP-Server/` can be protected with an optional shared secret (`TCP_SHARED_SECRET`) sent in `HELLO`.
+- When API auth is enabled, WebSocket access also requires `X-API-Key` (or `?api_key=`).
+- Consider running the HTTP API behind a TLS reverse proxy for remote access.
+
 ## 12. File structure
 
 See top-level layout; important files include:
@@ -201,4 +221,3 @@ See top-level layout; important files include:
 - **Security**: Report vulnerabilities to arn-c0de@protonmail.com (see [SECURITY.md](SECURITY.md))
 
 This project is provided as-is for educational and experimental purposes.
-

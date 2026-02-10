@@ -26,6 +26,11 @@ extern uint32_t messagesReceived;
 extern uint32_t messagesSent;
 extern int scrollOffset;
 
+// WiFi/TCP status (defined in wifi_tcp.h)
+extern bool wifiConnected;
+extern bool tcpConnected;
+extern bool tcpEnabled;
+
 // Pin definitions (already defined in main .ino)
 // #define LED_PIN and OLED_* pins are in main file
 
@@ -96,13 +101,24 @@ void updateDisplay() {
     display.setTextSize(1);
     display.setTextColor(SSD1306_WHITE);
     
-    // Line 1: Frequency, Power
+    // Line 1: Frequency, Power, Node, WiFi indicator
     display.setCursor(0, 0);
     display.print(loraFrequency, 1);
     display.print("MHz ");
     display.print(loraPower);
-    display.print("dBm N");
-    display.println(nodeID);
+    display.print("dB N");
+    display.print(nodeID);
+    // WiFi indicator at right edge: W=TCP connected, w=WiFi only, .=disconnected
+    if (tcpEnabled) {
+        display.setCursor(122, 0);
+        if (tcpConnected) {
+            display.print("W");
+        } else if (wifiConnected) {
+            display.print("w");
+        } else {
+            display.print(".");
+        }
+    }
     
     // Line 2: TX/RX counts and RSSI
     display.setCursor(0, 10);

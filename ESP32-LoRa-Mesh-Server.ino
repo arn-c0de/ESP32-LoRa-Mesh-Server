@@ -45,6 +45,7 @@
 #include "mesh_network.h"
 #include "commands.h"
 #include "display_ui.h"
+#include "wifi_tcp.h"
 
 // =============================
 // OLED DISPLAY CONFIGURATION
@@ -63,18 +64,51 @@ SX1276 radio = new Module(LORA_NSS, LORA_DIO0, LORA_RST, RADIOLIB_NC);
 // Software version
 const char SOFTWARE_VERSION[] = "1.1"; // Update here for firmware version display
 
-// Default LoRa settings
+// Default LoRa settings (overridable via .env at compile time)
+#ifdef LORA_FREQ
+float loraFrequency = LORA_FREQ;
+#else
 float loraFrequency = 868.0;        // Default 868 MHz (EU)
+#endif
+
+#ifdef LORA_POWER
+int8_t loraPower = LORA_POWER;
+#else
 int8_t loraPower = 14;              // Default 14 dBm (max for EU)
+#endif
+
+#ifdef LORA_BW
+float loraBandwidth = LORA_BW;
+#else
 float loraBandwidth = 125.0;        // 125 kHz
+#endif
+
+#ifdef LORA_SF
+uint8_t loraSpreadFactor = LORA_SF;
+#else
 uint8_t loraSpreadFactor = 7;       // SF7
+#endif
+
+#ifdef LORA_CR
+uint8_t loraCodingRate = LORA_CR;
+#else
 uint8_t loraCodingRate = 5;         // CR 4/5
+#endif
 
 // =============================
 // MESH CONFIGURATION
 // =============================
+#ifdef NODE_ID
+uint8_t nodeID = NODE_ID;
+#else
 uint8_t nodeID = 1;                 // This node's ID (1-255)
+#endif
+
+#ifdef LORA_HOPS
+uint8_t defaultHopCount = LORA_HOPS;
+#else
 uint8_t defaultHopCount = 3;        // Default hop count for messages
+#endif
 String lastReceivedMsg = "";        // Last received message text
 int lastRSSI = 0;                   // Last received RSSI
 uint8_t lastSenderID = 0;           // Last sender node ID
@@ -136,9 +170,15 @@ void setup() {
     EEPROM.begin(EEPROM_SIZE);
     loadDeviceName();
     loadAllSettings();
-        // Load encryption key from NVS (if saved)
+    // Load encryption key from NVS (if saved)
     loadEncryptionKey();
-        Serial.println();
+    #ifdef ENCRYPTION_PASSPHRASE
+    if (!isEncryptionKeySet()) {
+        Serial.println("[E] Auto-setting key from compile-time passphrase");
+        setEncryptionKeyFromPassphrase(ENCRYPTION_PASSPHRASE);
+    }
+    #endif
+    Serial.println();
     Serial.println("========================================");
     Serial.print("  ESP32 LoRa Mesh Server v");
     Serial.println(SOFTWARE_VERSION);
@@ -155,7 +195,10 @@ void setup() {
     
     // Setup LoRa
     setupLoRa();
-    
+
+    // Setup WiFi/TCP (HomeServer connection)
+    setupWiFi();
+
     Serial.println();
     Serial.println("System ready! Type '/HELP' for commands.");
     Serial.println("========================================");
@@ -192,7 +235,10 @@ void loop() {
     
     // Check for ping timeout
     checkPingTimeout();
-    
+
+    // Handle WiFi/TCP HomeServer connection
+    handleTCP();
+
     // Update display periodically
     if (!showingStartup && (millis() - lastDisplayUpdate > DISPLAY_UPDATE_INTERVAL)) {
         updateDisplay();
@@ -236,6 +282,11 @@ void loadDeviceName() {
             deviceName += (char)EEPROM.read(DEVICE_NAME_ADDR_DATA + i);
         }
     }
+    #ifdef DEVICE_NAME
+    if (deviceName.length() == 0) {
+        deviceName = DEVICE_NAME;
+    }
+    #endif
 }
 
 void saveDeviceName(String name) {

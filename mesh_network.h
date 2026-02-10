@@ -31,6 +31,10 @@ extern String deviceName;
 // Forward declarations
 extern void updateDisplay();
 
+// WiFi/TCP forwarding (implemented in wifi_tcp.h)
+extern void sendMessageTCP(const String &rawPacket);
+extern bool tcpEnabled;
+
 // =============================
 // PACKET STRUCTURE
 // =============================
@@ -101,7 +105,10 @@ void sendMeshMessage(uint8_t toID, uint8_t hops, String data) {
     if (state == RADIOLIB_ERR_NONE) {
         Serial.println("[TX] Success");
         messagesSent++;
-        
+
+        // Forward to HomeServer via TCP
+        sendMessageTCP(packet);
+
         // Brief LED blink
         digitalWrite(LED_PIN, LOW);
         delay(50);
@@ -257,6 +264,9 @@ void receiveLoRaMessage() {
                     lastReceivedMsg = displayMsg;
                     messagesReceived++;
                     scrollOffset = 0; // Reset scroll
+
+                    // Forward received packet to HomeServer via TCP
+                    sendMessageTCP(msg);
                     
                     updateDisplay();
                 }

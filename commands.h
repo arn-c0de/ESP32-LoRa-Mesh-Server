@@ -3,6 +3,7 @@
  * Serial Command Processing
  * - Command parsing
  * - LoRa configuration commands
+ * - WiFi/TCP HomeServer commands
  * - Messaging commands
  * - Status and help
  */
@@ -37,6 +38,25 @@ extern void saveAllSettings();
 // Forward declarations
 extern void updateDisplay();
 
+// WiFi/TCP extern declarations (implemented in wifi_tcp.h)
+extern bool wifiConnected;
+extern bool tcpConnected;
+extern bool tcpEnabled;
+extern String wifiSSID;
+extern String wifiPassword;
+extern String serverIP;
+extern uint16_t serverPort;
+extern String tcpAuthToken;
+extern void saveWiFiSSID(const String &ssid);
+extern void saveWiFiPassword(const String &pass);
+extern void saveServerIP(const String &ip);
+extern void saveServerPort(uint16_t port);
+extern void saveTCPAuthToken(const String &token);
+extern void saveTCPEnabled(bool enabled);
+extern void printTCPStatus();
+extern void connectWiFi();
+extern void connectTCP();
+
 // =============================
 // HELP TEXT
 // =============================
@@ -48,7 +68,7 @@ void printHelp() {
     Serial.println("/HELP             - Show this help");
     Serial.println("/STATUS           - Show system status");
     Serial.println("/PING             - Broadcast PING and wait for PONG");
-    Serial.println("(Separators: ':', '=' or space — e.g. /TX:Hi, /TX=Hi or /TX Hi)");
+    Serial.println("(Separators: ':', '=' or space)");
     Serial.println();
     Serial.println("--- LoRa Settings ---");
     Serial.println("/FREQ:868.0       - Set frequency in MHz");
@@ -65,13 +85,24 @@ void printHelp() {
     Serial.println("--- Messaging ---");
     Serial.println("/TX:Hello         - Broadcast message (alias: /SEND)");
     Serial.println("/TXTO:5,Hi        - Send to specific node (alias: /SENDTO)");
-    Serial.println("/NAME:DeviceName  - Set device name (prepended to messages)");
+    Serial.println("/NAME:DeviceName  - Set device name");
     Serial.println();
     Serial.println("--- Encryption (AES-256-GCM) ---");
     Serial.println("/KEY:passphrase   - Set encryption key from passphrase");
     Serial.println("/ESEND:message    - Send encrypted broadcast message");
     Serial.println("/CLEARKEY         - Clear encryption key from memory/NVS");
     Serial.println("/EINFO            - Show encryption status and fingerprint");
+    Serial.println();
+    Serial.println("--- WiFi/TCP HomeServer ---");
+    Serial.println("/WIFISSID:name    - Set WiFi SSID (case-sensitive)");
+    Serial.println("/WIFIPASS:pass    - Set WiFi password (case-sensitive)");
+    Serial.println("/SERVERIP:x.x.x.x - Set HomeServer IP");
+    Serial.println("/SERVERPORT:5001  - Set HomeServer TCP port");
+    Serial.println("/TCPENABLE        - Enable WiFi/TCP connection");
+    Serial.println("/TCPDISABLE       - Disable WiFi/TCP connection");
+    Serial.println("/TCPSTATUS        - Show WiFi/TCP connection status");
+    Serial.println("/RECONNECT        - Force WiFi/TCP reconnect");
+    Serial.println("/TCPTOKEN:token   - Set TCP shared secret (case-sensitive)");
     Serial.println();
     Serial.println("--- Other ---");
     Serial.println("/RESET            - Reset counters and display");
@@ -90,14 +121,17 @@ void processSerialCommand(String cmd) {
         hadSlash = true;
         cmd = cmd.substring(1);
     }
+
+    // Preserve original command for case-sensitive arguments
+    String originalCmd = cmd;
     cmd.toUpperCase();
-    
+
     Serial.print("> ");
     if (hadSlash) Serial.print("/");
     Serial.println(cmd);
-    
+
     // Parse command and arguments
-    // Accept separators ':' or '=' or a space. This allows '/SEND:msg', '/SEND=msg' or '/SEND msg'
+    // Accept separators ':' or '=' or a space
     int colonPos = cmd.indexOf(':');
     int equalPos = cmd.indexOf('=');
     int spacePos = cmd.indexOf(' ');
@@ -109,7 +143,11 @@ void processSerialCommand(String cmd) {
     String command = (sepPos > 0) ? cmd.substring(0, sepPos) : cmd;
     String argument = (sepPos > 0) ? cmd.substring(sepPos + 1) : "";
     argument.trim();
-    
+
+    // Case-sensitive argument from original input (for WiFi SSID/password, KEY, NAME, messages)
+    String rawArgument = (sepPos > 0) ? originalCmd.substring(sepPos + 1) : "";
+    rawArgument.trim();
+
     // HELP command
     if (command == "HELP" || command == "?") {
         printHelp();
@@ -118,10 +156,10 @@ void processSerialCommand(String cmd) {
     else if (command == "PING") {
         sendPing();
     }
-    // NAME - Set device name
+    // NAME - Set device name (case-sensitive)
     else if (command == "NAME") {
-        if (argument.length() > 0) {
-            saveDeviceName(argument);
+        if (rawArgument.length() > 0) {
+            saveDeviceName(rawArgument);
             Serial.print("[OK] Device name set to: '");
             Serial.print(deviceName);
             Serial.println("'");
@@ -261,20 +299,20 @@ void processSerialCommand(String cmd) {
             Serial.println(defaultHopCount);
         }
     }
-    // TX - Transmit message (alias: SEND)
+    // TX - Transmit message (alias: SEND) - case-sensitive payload
     else if (command == "TX" || command == "SEND") {
-        if (argument.length() > 0) {
-            sendMeshMessage(0, defaultHopCount, argument); // 0 = broadcast
+        if (rawArgument.length() > 0) {
+            sendMeshMessage(0, defaultHopCount, rawArgument); // 0 = broadcast
         } else {
             Serial.println("[ERROR] No message to send. Usage: /TX:Your message here or /SEND:Your message here");
         }
     }
-    // TXTO - Transmit to specific node (alias: SENDTO)
+    // TXTO - Transmit to specific node (alias: SENDTO) - case-sensitive payload
     else if (command == "TXTO" || command == "SENDTO") {
-        int commaPos = argument.indexOf(',');
+        int commaPos = rawArgument.indexOf(',');
         if (commaPos > 0) {
-            uint8_t targetID = argument.substring(0, commaPos).toInt();
-            String msg = argument.substring(commaPos + 1);
+            uint8_t targetID = rawArgument.substring(0, commaPos).toInt();
+            String msg = rawArgument.substring(commaPos + 1);
             if (targetID != 0 && msg.length() > 0) {
                 sendMeshMessage(targetID, defaultHopCount, msg);
             } else {
@@ -325,6 +363,13 @@ void processSerialCommand(String cmd) {
             Serial.print("Last Message:  ");
             Serial.println(lastReceivedMsg);
         }
+        Serial.println("--- WiFi/TCP ---");
+        Serial.print("TCP Enabled:   ");
+        Serial.println(tcpEnabled ? "YES" : "NO");
+        Serial.print("WiFi:          ");
+        Serial.println(wifiConnected ? "CONNECTED" : "DISCONNECTED");
+        Serial.print("TCP:           ");
+        Serial.println(tcpConnected ? "CONNECTED" : "DISCONNECTED");
         Serial.println("========================================");
     }
     // RESET - Reset counters
@@ -342,12 +387,12 @@ void processSerialCommand(String cmd) {
     else if (command == "FORMAT") {
         Serial.println("[WARNING] Resetting EEPROM to factory defaults...");
         delay(500);
-        
+
         // Clear entire EEPROM
         for (int i = 0; i < 256; i++) {
             EEPROM.write(i, 0xFF);
         }
-        
+
         // Reset variables to defaults
         nodeID = 1;
         loraFrequency = 868.0;
@@ -357,10 +402,18 @@ void processSerialCommand(String cmd) {
         loraCodingRate = 5;
         defaultHopCount = 3;
         deviceName = "";
-        
+
+        // Reset WiFi/TCP runtime variables
+        wifiSSID = "";
+        wifiPassword = "";
+        serverIP = "";
+        serverPort = 5001;
+        tcpEnabled = false;
+        tcpAuthToken = "";
+
         // Save defaults to EEPROM
         saveAllSettings();
-        
+
         Serial.println("[OK] EEPROM formatted and reset to defaults");
         Serial.println("[OK] Restart the device to apply changes");
     }
@@ -413,10 +466,10 @@ void processSerialCommand(String cmd) {
             Serial.println(" kHz");
         }
     }
-    // KEY - Set encryption key from passphrase
+    // KEY - Set encryption key from passphrase (case-sensitive)
     else if (command == "KEY") {
-        if (argument.length() > 0) {
-            setEncryptionKeyFromPassphrase(argument);
+        if (rawArgument.length() > 0) {
+            setEncryptionKeyFromPassphrase(rawArgument);
         } else {
             Serial.println("[ERROR] Usage: /KEY:passphrase or /KEY=passphrase");
         }
@@ -429,13 +482,13 @@ void processSerialCommand(String cmd) {
     else if (command == "EINFO") {
         printEncryptionInfo();
     }
-    // ESEND - Send encrypted message
+    // ESEND - Send encrypted message (case-sensitive)
     else if (command == "ESEND") {
-        if (argument.length() > 0) {
+        if (rawArgument.length() > 0) {
             if (!isEncryptionKeySet()) {
                 Serial.println("[ERROR] No encryption key set. Use /KEY:passphrase first");
             } else {
-                String encrypted = encryptAndEncode(argument);
+                String encrypted = encryptAndEncode(rawArgument);
                 if (encrypted.length() > 0) {
                     // Build encrypted payload: FLAG:<NodeID>:<Base64Blob>
                     String payload = "FLAG:" + String(nodeID) + ":" + encrypted;
@@ -449,11 +502,105 @@ void processSerialCommand(String cmd) {
             Serial.println("[ERROR] No message to encrypt. Usage: /ESEND:Your message here");
         }
     }
+    // =============================
+    // WiFi/TCP COMMANDS
+    // =============================
+    // WIFISSID - Set WiFi SSID (case-sensitive)
+    else if (command == "WIFISSID") {
+        if (rawArgument.length() > 0) {
+            saveWiFiSSID(rawArgument);
+            Serial.print("[OK] WiFi SSID set to: '");
+            Serial.print(wifiSSID);
+            Serial.println("'");
+        } else {
+            Serial.print("[INFO] Current WiFi SSID: '");
+            Serial.print(wifiSSID);
+            Serial.println("'");
+        }
+    }
+    // WIFIPASS - Set WiFi password (case-sensitive)
+    else if (command == "WIFIPASS") {
+        if (rawArgument.length() > 0) {
+            saveWiFiPassword(rawArgument);
+            Serial.println("[OK] WiFi password updated");
+        } else {
+            Serial.println("[INFO] WiFi password is set (hidden)");
+        }
+    }
+    // SERVERIP - Set HomeServer IP
+    else if (command == "SERVERIP") {
+        if (rawArgument.length() > 0) {
+            saveServerIP(rawArgument);
+            Serial.print("[OK] Server IP set to: ");
+            Serial.println(serverIP);
+        } else {
+            Serial.print("[INFO] Current Server IP: ");
+            Serial.println(serverIP);
+        }
+    }
+    // SERVERPORT - Set HomeServer TCP port
+    else if (command == "SERVERPORT") {
+        if (argument.length() > 0) {
+            uint16_t port = argument.toInt();
+            if (port > 0 && port <= 65535) {
+                saveServerPort(port);
+                Serial.print("[OK] Server port set to: ");
+                Serial.println(serverPort);
+            } else {
+                Serial.println("[ERROR] Invalid port. Use 1-65535");
+            }
+        } else {
+            Serial.print("[INFO] Current Server port: ");
+            Serial.println(serverPort);
+        }
+    }
+    // TCPENABLE - Enable WiFi/TCP
+    else if (command == "TCPENABLE") {
+        saveTCPEnabled(true);
+        Serial.println("[OK] TCP enabled - connecting...");
+        if (wifiSSID.length() > 0) {
+            connectWiFi();
+        }
+    }
+    // TCPDISABLE - Disable WiFi/TCP
+    else if (command == "TCPDISABLE") {
+        saveTCPEnabled(false);
+        WiFi.disconnect();
+        wifiConnected = false;
+        tcpConnected = false;
+        Serial.println("[OK] TCP disabled - WiFi disconnected");
+    }
+    // TCPSTATUS - Show WiFi/TCP status
+    else if (command == "TCPSTATUS") {
+        printTCPStatus();
+    }
+    // TCPTOKEN - Set TCP shared secret (case-sensitive)
+    else if (command == "TCPTOKEN") {
+        if (rawArgument.length() > 0) {
+            saveTCPAuthToken(rawArgument);
+            Serial.println("[OK] TCP shared secret updated");
+        } else {
+            Serial.println("[INFO] TCP shared secret is set (hidden)");
+        }
+    }
+    // RECONNECT - Force WiFi/TCP reconnect
+    else if (command == "RECONNECT") {
+        if (!tcpEnabled) {
+            Serial.println("[ERROR] TCP is disabled. Use /TCPENABLE first");
+        } else {
+            Serial.println("[OK] Forcing reconnect...");
+            WiFi.disconnect();
+            wifiConnected = false;
+            tcpConnected = false;
+            delay(500);
+            connectWiFi();
+        }
+    }
     // Unknown command
     else {
         Serial.println("[ERROR] Unknown command. Type /HELP for available commands.");
     }
-    
+
     Serial.println();
 }
 

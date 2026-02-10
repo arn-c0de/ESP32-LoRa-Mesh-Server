@@ -1,0 +1,28 @@
+[Unit]
+Description=ESP32 LoRa Mesh HomeServer
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/ESP32-LoRa-Mesh-Server/TCP-Server
+ExecStart=/home/pi/ESP32-LoRa-Mesh-Server/TCP-Server/venv/bin/python main.py
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectControlGroups=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+ReadWritePaths=/home/pi/ESP32-LoRa-Mesh-Server/TCP-Server
+
+[Install]
+WantedBy=multi-user.target

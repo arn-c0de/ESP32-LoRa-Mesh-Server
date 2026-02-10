@@ -14,6 +14,53 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# ================================================================
+# Parse .env file for compile-time defines
+# ================================================================
+BUILD_DEFINES=""
+if [ -f ".env" ]; then
+    echo -e "${BLUE}[ENV] Loading .env file...${NC}"
+    trim() {
+        local s="$1"
+        s="${s#"${s%%[![:space:]]*}"}"
+        s="${s%"${s##*[![:space:]]}"}"
+        printf '%s' "$s"
+    }
+    while IFS='=' read -r key value; do
+        # Skip comments and empty lines
+        [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+        # Trim whitespace (preserve internal spaces and # in values)
+        key="$(trim "$key")"
+        value="$(trim "$value")"
+        [ -z "$key" ] && continue
+
+        # String values need escaped quotes for C compiler
+        case "$key" in
+            WIFI_SSID|WIFI_PASS|SERVER_IP|DEVICE_NAME|ENCRYPTION_PASSPHRASE|TCP_SHARED_SECRET)
+                BUILD_DEFINES="$BUILD_DEFINES -D${key}=\"\\\"${value}\\\"\""
+                ;;
+            SERVER_PORT|NODE_ID|LORA_POWER|LORA_SF|LORA_CR|LORA_HOPS|TCP_ENABLED)
+                BUILD_DEFINES="$BUILD_DEFINES -D${key}=${value}"
+                ;;
+            LORA_FREQ|LORA_BW)
+                BUILD_DEFINES="$BUILD_DEFINES -D${key}=${value}"
+                ;;
+        esac
+        case "$key" in
+            WIFI_PASS|ENCRYPTION_PASSPHRASE)
+                echo -e "  ${GREEN}${key}${NC} = ********"
+                ;;
+            *)
+                echo -e "  ${GREEN}${key}${NC} = ${value}"
+                ;;
+        esac
+    done < .env
+    echo ""
+else
+    echo -e "${YELLOW}[ENV] No .env file found (using firmware defaults)${NC}"
+    echo ""
+fi
+
 # Configuration
 SKETCH_DIR="$(pwd)"
 SKETCH_NAME="$(basename "$SKETCH_DIR")"
@@ -188,7 +235,13 @@ echo ""
 
 # Compile once and put build artifacts into ./build
 echo -e "${BLUE}Compiling once into ./build (reused for uploads)...${NC}"
-COMPILE_OUTPUT=$(arduino-cli compile --fqbn "$FQBN" "$SKETCH_DIR" --output-dir build --warnings all 2>&1) || {
+COMPILE_CMD="arduino-cli compile --fqbn \"$FQBN\" \"$SKETCH_DIR\" --output-dir build --warnings all"
+if [ -n "$BUILD_DEFINES" ]; then
+    COMPILE_CMD="arduino-cli compile --fqbn \"$FQBN\" \"$SKETCH_DIR\" --output-dir build --warnings all --build-property \"build.extra_flags=$BUILD_DEFINES\""
+    echo -e "${BLUE}Build defines: ${NC}$BUILD_DEFINES"
+    echo ""
+fi
+COMPILE_OUTPUT=$(eval $COMPILE_CMD 2>&1) || {
     echo ""
     echo -e "${RED}[ERROR] Compilation failed!${NC}"
     echo ""
